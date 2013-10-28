@@ -3,107 +3,45 @@
     <head>
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <title>Convex hull</title>
+        <title>Segment Intersection</title>
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <script type="text/javascript" src="RedBlackTree.js"></script>
+        <script type="text/javascript" src="RedBlackNode.js"></script>
     </head>
     <body>
         <canvas id="myCanvas" width="500" height="500"></canvas>
+   
         <script type="text/javascript">
-            // Point class
-            function Point(x,y){
-                this.x = x;
-                this.y = y;
-                this.toString = function(){
-                    return "x: " + x + ", y: " + y;
-                };
-                this.rotateRight = function(p1, p2){
-                    // cross product, + is counterclockwise, - is clockwise
-                    return ((p2.x*y-p2.y*x) - (p1.x*y-p1.y*x) + (p1.x*p2.y-p1.y*p2.x))<0;
-                };
-            };
-        </script>
-        <script type="text/javascript">
-            // ConvexHull class
-            function ConvexHull(points){
-                this.hull;
-                this.calculate = function(){
-                    this.hull = new Array();
-                    points.sort(function compare(p1,p2) {return p1.x - p2.x;});
-
-                    upperHull = new Array();
-                    this.calcUpperhull(upperHull);
-                    for(var i = 0; i < upperHull.length; i++)
-                        this.hull.push(upperHull[i]);
-
-                    lowerHull = new Array();
-                    this.calcLowerhull(lowerHull);
-                    for(var i = 0; i < lowerHull.length; i++)
-                        this.hull.push(lowerHull[i]);
-                };
-                this.calcUpperhull = function(upperHull){
-                    var i = 0;
-                    upperHull.push(points[i]);
-                    i++;
-                    upperHull.push(points[i]);
-                    i++;
-                    // Start upperHull scan
-                    for(i; i < points.length; i++){
-                        upperHull.push(points[i]);
-                        while(
-                            upperHull.length>2 && // more than 2 points 
-                            !upperHull[upperHull.length-3].rotateRight(upperHull[upperHull.length-1],upperHull[upperHull.length-2]) // last 3 points make left turn
-                        )
-                            upperHull.splice(upperHull.indexOf(upperHull[upperHull.length-2]), 1); // remove middle point
-                    }
-                };
-                this.calcLowerhull = function(lowerHull){
-                    var i = points.length-1;
-                    lowerHull.push(points[i]);
-                    i--;
-                    lowerHull.push(points[i]);
-                    i--;
-                    // Start lowerHull scan
-                    for(i; i >= 0; i--){
-                        lowerHull.push(points[i]);
-                        while(
-                            lowerHull.length>2 && // more than 2 points 
-                            !lowerHull[lowerHull.length-3].rotateRight(lowerHull[lowerHull.length-1],lowerHull[lowerHull.length-2]) // last 3 points make left turn
-                        )
-                            lowerHull.splice(lowerHull.indexOf(lowerHull[lowerHull.length-2]), 1); // remove middle point
-                    }
-                };
-            };
-        </script>
-        <script type="text/javascript">
-            // Create random points
-            var points = new Array();
-            for(var i = 0; i < 30; i++){
-                var x = Math.floor(Math.random() * 480) + 20;
-                var y = Math.floor(Math.random() * 480) + 20;
-                points.push(new Point(x,y));
-            }
-            // Get canvas
+            segments = new Array();
+            segments.push(new Segment(new Point(60,40), new Point(260,230)));
+            segments.push(new Segment(new Point(10,20), new Point(190,200)));
+            segments.push(new Segment(new Point(240,10), new Point(10,240)));
+            segments.push(new Segment(new Point(190,10), new Point(10,154)));
+            segments.push(new Segment(new Point(200,20), new Point(180,90)));
+            segments.push(new Segment(new Point(100,20), new Point(200,350)));
+            // Get canvas + draw segments
             var c=document.getElementById("myCanvas");
             var ctx=c.getContext("2d");
-            // Draw points on canvas
-            for (var i = 0; i < points.length; i++){
-                ctx.arc(points[i].x, points[i].y, 3, 0, 2 * Math.PI, false);
-                ctx.fillStyle = 'green';
-                ctx.fill();
-            }
-            // Draw convex hull
-            convexHull = new ConvexHull(points);
-            convexHull.calculate();
-            for(var i = 1; i < convexHull.hull.length; i++){
-                p1 = convexHull.hull[i-1];
-                p2 = convexHull.hull[i];
+            for(var i = 0; i < segments.length; i++){
                 ctx.beginPath();
-                ctx.moveTo(p1.x, p1.y);
-                ctx.lineTo(p2.x, p2.y);
+                ctx.moveTo(segments[i].uPoint.x, segments[i].uPoint.y);
+                ctx.lineTo(segments[i].lPoint.x, segments[i].lPoint.y);
                 ctx.closePath();
                 ctx.stroke();
             }
+
+            // Calculate intersections
+            si = new SegmentIntersection();
+            var intersections = si.calculate(segments);
+
+            // Draw intersections
+            for(var i = 0; i < intersections.length; i++){
+                intersection = intersections[i]["intersection"];
+                ctx.arc(intersection.x, intersection.y, 3, 0, 2 * Math.PI, false);
+            }
+            ctx.fillStyle = 'red';
+            ctx.fill();
         </script>
     </body>
 </html>
