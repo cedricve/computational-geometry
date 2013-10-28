@@ -24,21 +24,7 @@
                 SegmentStatus.prototype.toString = function(){
                     return this.p.x + ", " + this.p.y + " | " + this.s.lPoint.x + ", " + this.s.lPoint.y;
                 };
-                SegmentStatus.prototype.compare = function(s){
-                    if(this.p.x == s.p.x)
-                        return this.p.y - s.p.y;
-                    else
-                        return this.p.x - s.p.x;
-                };
-                SegmentStatus.prototype.hasLowerEndpoint = function(p){
-                    lower = this.s.lPoint;
-                    return (lower.x == p.x && lower.y == p.y);
-                };
-                SegmentStatus.prototype.containsEndpoint = function(p){
-                    _1 = this.s.uPoint;
-                    _2 = this.s.lPoint;
-                    return Math.abs((_2.x*p.y-_2.y*p.x)-(_1.x*p.y-_1.y*p.x)+(_1.x*_2.y-_1.y*_2.x))<0.1;
-                };
+     
             //***************
             //
             //    SegmentIntersection
