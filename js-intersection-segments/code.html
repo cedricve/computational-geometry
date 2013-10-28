@@ -3,295 +3,107 @@
     <head>
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <title>Segment Intersection</title>
+        <title>Convex hull</title>
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <script type="text/javascript" src="RedBlackTree.js"></script>
-        <script type="text/javascript" src="RedBlackNode.js"></script>
     </head>
     <body>
         <canvas id="myCanvas" width="500" height="500"></canvas>
         <script type="text/javascript">
-            //***************
-            //
-            //    Point
-            //
-            //***************
-                // Point class
-                    // x: int (coördinate)
-                    // y: int (coördinate)
-                function Point(x,y){
-                    this.x = x;
-                    this.y = y;
+            // Point class
+            function Point(x,y){
+                this.x = x;
+                this.y = y;
+                this.toString = function(){
+                    return "x: " + x + ", y: " + y;
                 };
-                Point.prototype.compare = function(p) {
-                    if(this.y == p.y)
-                        return this.x - p.x;
-                    else
-                        return this.y - p.y;
+                this.rotateRight = function(p1, p2){
+                    // cross product, + is counterclockwise, - is clockwise
+                    return ((p2.x*y-p2.y*x) - (p1.x*y-p1.y*x) + (p1.x*p2.y-p1.y*p2.x))<0;
                 };
-            //***************
-            //
-            //    Segment
-            //
-            //***************
-                // Segment class
-                    // - uPoint: upper point (<<y && <<x)
-                    // - lPoint: lower point (>>y && >>x)
-                function Segment(uPoint,lPoint){
-                    this.uPoint = uPoint;
-                    this.lPoint = lPoint;
-                };
-                Segment.prototype.intersect = function(s){
-                    var _1 = this.uPoint;
-                    var _2 = this.lPoint;
-                    var _3 = s.lPoint;
-                    var _4 = s.uPoint;
-                    var denominator = (_1.x-_2.x)*(_3.y-_4.y)-(_1.y-_2.y)*(_3.x-_4.x); // if zero they are parallel
-                    if(denominator!=0){
-                        var x = ((_1.x*_2.y-_1.y*_2.x)*(_3.x-_4.x)-(_1.x-_2.x)*(_3.x*_4.y-_3.y*_4.x))/denominator;
-                        var y = ((_1.x*_2.y-_1.y*_2.x)*(_3.y-_4.y)-(_1.y-_2.y)*(_3.x*_4.y-_3.y*_4.x))/denominator;
-                        // if intersection in area of segments, then we have an intersection
-                        if( ((x<=_1.x&&x>=_2.x) || (x>=_1.x&&x<=_2.x))&&((y<=_1.y&&y>=_2.y) || (y>=_1.y&&x<=_2.y)) && ((x<=_3.x&&x>=_4.x) || (x>=_3.x&&x<=_4.x))&&((y<=_3.y&&y>=_4.y) || (y>=_3.y&&x<=_4.y)) )
-                            return new Point(x,y);
-                    }
-                    return null;
-                };
-                Segment.prototype.slope = function(){
-                    return (this.uPoint.y-this.lPoint.y)/(this.uPoint.x-this.lPoint.x);
-                };
-                Segment.prototype.calcX = function(y){
-                    return (y-this.lPoint.y)/this.slope()+this.lPoint.x;
-                };
-                // SegmentWrapper class
-                    // - p: Point
-                    // - a: Array of Segments
-                function SegmentWrapper(p){
-                    this.p = p;
-                    this.a = new Array();
-                };
-                SegmentWrapper.prototype.toString = function(){
-                    return "x: " + this.p.x + ", y: " + this.p.y;
-                };
-                SegmentWrapper.prototype.add = function(s){
-                    this.a.push(s)
-                };
-                // Compare function
-                SegmentWrapper.prototype.compare = function(s){
-                    return this.p.compare(s.p);
-                };
-
-                // SegmentStatus class
-                    // - p: Point
-                    // - s: Segment
-                function SegmentStatus(p,s){
-                    this.p = p;
-                    this.s = s;
-                };
-                SegmentStatus.prototype.toString = function(){
-                    return this.p.x + ", " + this.p.y + " | " + this.s.lPoint.x + ", " + this.s.lPoint.y;
-                };
-                SegmentStatus.prototype.compare = function(s){
-                    if(this.p.x == s.p.x)
-                        return this.p.y - s.p.y;
-                    else
-                        return this.p.x - s.p.x;
-                };
-                SegmentStatus.prototype.hasLowerEndpoint = function(p){
-                    lower = this.s.lPoint;
-                    return (lower.x == p.x && lower.y == p.y);
-                };
-                SegmentStatus.prototype.containsEndpoint = function(p){
-                    _1 = this.s.uPoint;
-                    _2 = this.s.lPoint;
-                    return Math.abs((_2.x*p.y-_2.y*p.x)-(_1.x*p.y-_1.y*p.x)+(_1.x*_2.y-_1.y*_2.x))<0.1;
-                };
-            //***************
-            //
-            //    SegmentIntersection
-            //
-            //***************
-                // SegmentIntersection algorithm class
-                function SegmentIntersection(segments){
-                    this.status; // status structure (RedBlackTree)
-                    this.queue; // event queue (RedBlackTree)
-                    this.intersections;
-                };
-                SegmentIntersection.prototype.addIntersection = function (p,u,l,c){
-                    if(u.length+l.length+c.length > 1){ // ok we got intersections
-                        inter = new Array();
-                        for(var i = 0; i < u.length; i++)
-                            inter.push(u[i]);
-                        for(var i = 0; i < l.length; i++)
-                            inter.push(l[i]);
-                        for(var i = 0; i < c.length; i++)
-                            inter.push(c[i]);
-                        this.intersections.push({"intersection":p,"segments":inter});
-                    }
-                };
-                SegmentIntersection.prototype.addToQueue = function(s){
-                    // upper point
-                        seg = this.queue.find(new SegmentWrapper(s.uPoint));
-                        if(!seg){
-                            seg = new SegmentWrapper(s.uPoint);
-                            this.queue.add(seg);
-                        }
-                        seg.add(s);
-                    // lower point
-                        if(!(seg = this.queue.find(new SegmentWrapper(s.lPoint)))){
-                            seg = new SegmentWrapper(s.lPoint);
-                            this.queue.add(seg);
-                        }  
-                };
-                SegmentIntersection.prototype.addToStatus = function(s,u){
-                    // add segment
-                        seg = new SegmentStatus(s.uPoint,s);
-                        this.status.add(seg);
-                };
-                SegmentIntersection.prototype.removeFromQueue = function(s){
-                    this.queue.remove(s);
-                };
-                SegmentIntersection.prototype.removeFromStatus = function(s){
-                    this.status.remove(s);
-                };
-                SegmentIntersection.prototype.topFromQueue = function(){
-                    return this.queue.min();
-                };
-                SegmentIntersection.prototype.calculate = function(segments){
-                    this.status = new RedBlackTree()
-                    this.queue = new RedBlackTree();
-                    this.intersections = new Array(); 
-                    // push segments in queue
-                    for(var i = 0; i < segments.length; i++)
-                        this.addToQueue(segments[i]);
-                    // Start handling eventpoints
-                    var u = 0;
-                    while(s = this.topFromQueue())
-                        this.handleEventPoint(s,u);
-                    return this.intersections;
-                };
-                SegmentIntersection.prototype.handleEventPoint = function(s,u){
-                    this.removeFromQueue(s);
-
-                    // New array's for upper, lower and contains Array
-                    var lArray = new Array();
-                    var uArray = new Array();
-                    var cArray = new Array();
-
-                    // Get upper eventpoints
-                    var segments = s.a;
-                    for(var i = 0; i < segments.length; i++)
-                            uArray.push(segments[i]);
-
-                    // Reformat structure
-                    s_ref = new SegmentStatus(s.p);
-                    // find successor and predecessor from p in status
-                    successor = this.status.findSuccessor(s_ref);
-                    while(successor != null){
-                        if(successor.hasLowerEndpoint(s.p)){
-                            lArray.push(successor.s);
-                            this.removeFromStatus(successor);
-                        }
-                        else if(successor.containsEndpoint(s.p)){
-                            cArray.push(successor.s);
-                            this.removeFromStatus(successor);
-                        }
-                        successor = this.status.findSuccessor(successor);
-                    }
-                    predecessor = this.status.findPredecessor(s_ref);
-                    while(predecessor != null){
-                        if(predecessor.hasLowerEndpoint(s.p)){
-                            lArray.push(predecessor.s);
-                            this.removeFromStatus(predecessor);
-                        }
-                        else if(predecessor.containsEndpoint(s.p)){
-                            cArray.push(predecessor.s);
-                            this.removeFromStatus(predecessor);
-                        }
-                        predecessor = this.status.findPredecessor(predecessor);
-                    }
-                    
-                    // Add possible intersections
-                    this.addIntersection(s.p,uArray,lArray,cArray);
-
-                    union = new Array();
-                    // Add upper eventpoints to status
-                    for(var i = 0; i < segments.length; i++){
-                        this.addToStatus(segments[i]);
-                        union.push(segments[i]);
-                    }
-    
-                    // Add contain eventpoints to status, reordering below sweep line.
-                    for(var i = 0; i < cArray.length; i++){
-                        newPoint = new Point(cArray[i].calcX(s.p.y+1),s.p.y+1); // y, just after sweep line (+1)
-                        seg = new Segment(newPoint,cArray[i].lPoint);
-                        union.push(seg);
-                        this.addToStatus(seg,u++);
-                    }
-
-                    // Add new possible eventpoints
-                    if(cArray.length+uArray.length==0) // if only points removed
-                    {
-                        successor = this.status.findSuccessor(s_ref);
-                        predecessor = this.status.findPredecessor(s_ref);
-                        if(successor && predecessor)
-                            this.findNewEvent(successor.s,predecessor.s,s.p);
-                    }
-                    else{ // if points in upper of contain
-                        union.sort(function compare(s1,s2){
-                            if(s1.uPoint.x == s2.uPoint.x)
-                                return s1.uPoint.y - s2.uPoint.y;
-                            else 
-                                return s1.uPoint.x - s2.uPoint.x;
-                        });
-                        smallest = union[0];
-                        biggest = union[union.length-1];
-                        predecessor = this.status.findPredecessor(new SegmentStatus(smallest.uPoint));
-                        if(predecessor)
-                            this.findNewEvent(predecessor.s,smallest,s.p);
-
-                        successor = this.status.findSuccessor(new SegmentStatus(biggest.uPoint));
-                        if(successor)
-                            this.findNewEvent(successor.s,biggest,s.p);
-                    }
-                }; 
-                SegmentIntersection.prototype.findNewEvent = function(s1,s2,p){          
-                    point = s1.intersect(s2);
-                    seg = new SegmentWrapper(point,"queue");
-                    if(point && (point.y > p.y || point.x > p.x) && !this.queue.find(seg)) // below sweep line
-                        this.queue.add(seg);
-                };
+            };
         </script>
         <script type="text/javascript">
-            segments = new Array();
-            segments.push(new Segment(new Point(60,40), new Point(260,230)));
-            segments.push(new Segment(new Point(10,20), new Point(190,200)));
-            segments.push(new Segment(new Point(240,10), new Point(10,240)));
-            segments.push(new Segment(new Point(190,10), new Point(10,154)));
-            segments.push(new Segment(new Point(200,20), new Point(180,90)));
-            segments.push(new Segment(new Point(100,20), new Point(200,350)));
-            // Get canvas + draw segments
+            // ConvexHull class
+            function ConvexHull(points){
+                this.hull;
+                this.calculate = function(){
+                    this.hull = new Array();
+                    points.sort(function compare(p1,p2) {return p1.x - p2.x;});
+
+                    upperHull = new Array();
+                    this.calcUpperhull(upperHull);
+                    for(var i = 0; i < upperHull.length; i++)
+                        this.hull.push(upperHull[i]);
+
+                    lowerHull = new Array();
+                    this.calcLowerhull(lowerHull);
+                    for(var i = 0; i < lowerHull.length; i++)
+                        this.hull.push(lowerHull[i]);
+                };
+                this.calcUpperhull = function(upperHull){
+                    var i = 0;
+                    upperHull.push(points[i]);
+                    i++;
+                    upperHull.push(points[i]);
+                    i++;
+                    // Start upperHull scan
+                    for(i; i < points.length; i++){
+                        upperHull.push(points[i]);
+                        while(
+                            upperHull.length>2 && // more than 2 points 
+                            !upperHull[upperHull.length-3].rotateRight(upperHull[upperHull.length-1],upperHull[upperHull.length-2]) // last 3 points make left turn
+                        )
+                            upperHull.splice(upperHull.indexOf(upperHull[upperHull.length-2]), 1); // remove middle point
+                    }
+                };
+                this.calcLowerhull = function(lowerHull){
+                    var i = points.length-1;
+                    lowerHull.push(points[i]);
+                    i--;
+                    lowerHull.push(points[i]);
+                    i--;
+                    // Start lowerHull scan
+                    for(i; i >= 0; i--){
+                        lowerHull.push(points[i]);
+                        while(
+                            lowerHull.length>2 && // more than 2 points 
+                            !lowerHull[lowerHull.length-3].rotateRight(lowerHull[lowerHull.length-1],lowerHull[lowerHull.length-2]) // last 3 points make left turn
+                        )
+                            lowerHull.splice(lowerHull.indexOf(lowerHull[lowerHull.length-2]), 1); // remove middle point
+                    }
+                };
+            };
+        </script>
+        <script type="text/javascript">
+            // Create random points
+            var points = new Array();
+            for(var i = 0; i < 30; i++){
+                var x = Math.floor(Math.random() * 480) + 20;
+                var y = Math.floor(Math.random() * 480) + 20;
+                points.push(new Point(x,y));
+            }
+            // Get canvas
             var c=document.getElementById("myCanvas");
             var ctx=c.getContext("2d");
-            for(var i = 0; i < segments.length; i++){
+            // Draw points on canvas
+            for (var i = 0; i < points.length; i++){
+                ctx.arc(points[i].x, points[i].y, 3, 0, 2 * Math.PI, false);
+                ctx.fillStyle = 'green';
+                ctx.fill();
+            }
+            // Draw convex hull
+            convexHull = new ConvexHull(points);
+            convexHull.calculate();
+            for(var i = 1; i < convexHull.hull.length; i++){
+                p1 = convexHull.hull[i-1];
+                p2 = convexHull.hull[i];
                 ctx.beginPath();
-                ctx.moveTo(segments[i].uPoint.x, segments[i].uPoint.y);
-                ctx.lineTo(segments[i].lPoint.x, segments[i].lPoint.y);
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
                 ctx.closePath();
                 ctx.stroke();
             }
-
-            // Calculate intersections
-            si = new SegmentIntersection();
-            var intersections = si.calculate(segments);
-
-            // Draw intersections
-            for(var i = 0; i < intersections.length; i++){
-                intersection = intersections[i]["intersection"];
-                ctx.arc(intersection.x, intersection.y, 3, 0, 2 * Math.PI, false);
-            }
-            ctx.fillStyle = 'red';
-            ctx.fill();
         </script>
     </body>
 </html>
