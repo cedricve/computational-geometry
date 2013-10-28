@@ -12,7 +12,58 @@
     <body>
         <canvas id="myCanvas" width="500" height="500"></canvas>
         <script type="text/javascript">
-           
+            //***************
+            //
+            //    Point
+            //
+            //***************
+                // Point class
+                    // x: int (coördinate)
+                    // y: int (coördinate)
+                function Point(x,y){
+                    this.x = x;
+                    this.y = y;
+                };
+                Point.prototype.compare = function(p) {
+                    if(this.y == p.y)
+                        return this.x - p.x;
+                    else
+                        return this.y - p.y;
+                };
+            //***************
+            //
+            //    Segment
+            //
+            //***************
+                // Segment class
+                    // - uPoint: upper point (<<y && <<x)
+                    // - lPoint: lower point (>>y && >>x)
+                function Segment(uPoint,lPoint){
+                    this.uPoint = uPoint;
+                    this.lPoint = lPoint;
+                };
+                Segment.prototype.intersect = function(s){
+                    var _1 = this.uPoint;
+                    var _2 = this.lPoint;
+                    var _3 = s.lPoint;
+                    var _4 = s.uPoint;
+                    var denominator = (_1.x-_2.x)*(_3.y-_4.y)-(_1.y-_2.y)*(_3.x-_4.x); // if zero they are parallel
+                    if(denominator!=0){
+                        var x = ((_1.x*_2.y-_1.y*_2.x)*(_3.x-_4.x)-(_1.x-_2.x)*(_3.x*_4.y-_3.y*_4.x))/denominator;
+                        var y = ((_1.x*_2.y-_1.y*_2.x)*(_3.y-_4.y)-(_1.y-_2.y)*(_3.x*_4.y-_3.y*_4.x))/denominator;
+                        // if intersection in area of segments, then we have an intersection
+                        if( ((x<=_1.x&&x>=_2.x) || (x>=_1.x&&x<=_2.x))&&((y<=_1.y&&y>=_2.y) || (y>=_1.y&&x<=_2.y)) && ((x<=_3.x&&x>=_4.x) || (x>=_3.x&&x<=_4.x))&&((y<=_3.y&&y>=_4.y) || (y>=_3.y&&x<=_4.y)) )
+                            return new Point(x,y);
+                    }
+                    return null;
+                };
+                Segment.prototype.slope = function(){
+                    return (this.uPoint.y-this.lPoint.y)/(this.uPoint.x-this.lPoint.x);
+                };
+                Segment.prototype.calcX = function(y){
+                    return (y-this.lPoint.y)/this.slope()+this.lPoint.x;
+                };
+         
             //***************
             //
             //    SegmentIntersection
