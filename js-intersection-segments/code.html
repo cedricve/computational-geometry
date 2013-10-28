@@ -13,6 +13,23 @@
         <canvas id="myCanvas" width="500" height="500"></canvas>
         <script type="text/javascript">
     
+                // SegmentWrapper class
+                    // - p: Point
+                    // - a: Array of Segments
+                function SegmentWrapper(p){
+                    this.p = p;
+                    this.a = new Array();
+                };
+                SegmentWrapper.prototype.toString = function(){
+                    return "x: " + this.p.x + ", y: " + this.p.y;
+                };
+                SegmentWrapper.prototype.add = function(s){
+                    this.a.push(s)
+                };
+                // Compare function
+                SegmentWrapper.prototype.compare = function(s){
+                    return this.p.compare(s.p);
+                };
 
                 // SegmentStatus class
                     // - p: Point
