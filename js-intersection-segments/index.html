@@ -140,7 +140,7 @@
                             this.queue.add(seg);
                         }  
                 };
-                SegmentIntersection.prototype.addToStatus = function(s,u){
+                SegmentIntersection.prototype.addToStatus = function(s){
                     // add segment
                         seg = new SegmentStatus(s.uPoint,s);
                         this.status.add(seg);
@@ -167,7 +167,7 @@
                         this.handleEventPoint(s,u);
                     return this.intersections;
                 };
-                SegmentIntersection.prototype.handleEventPoint = function(s,u){
+                SegmentIntersection.prototype.handleEventPoint = function(s){
                     this.removeFromQueue(s);
 
                     // New array's for upper, lower and contains Array
