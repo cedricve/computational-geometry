@@ -164,7 +164,7 @@
                     // Start handling eventpoints
                     var u = 0;
                     while(s = this.topFromQueue())
-                        this.handleEventPoint(s,u);
+                        this.handleEventPoint(s);
                     return this.intersections;
                 };
                 SegmentIntersection.prototype.handleEventPoint = function(s){
