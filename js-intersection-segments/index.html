@@ -223,7 +223,7 @@
                         newPoint = new Point(cArray[i].calcX(s.p.y+1),s.p.y+1); // y, just after sweep line (+1)
                         seg = new Segment(newPoint,cArray[i].lPoint);
                         union.push(seg);
-                        this.addToStatus(seg,u++);
+                        this.addToStatus(seg);
                     }
 
                     // Add new possible eventpoints
@@ -263,10 +263,10 @@
             segments = new Array();
             segments.push(new Segment(new Point(60,40), new Point(260,230)));
             segments.push(new Segment(new Point(10,20), new Point(190,200)));
-            segments.push(new Segment(new Point(240,10), new Point(10,240)));
+            segments.push(new Segment(new Point(240,10), new Point(10,200)));
             segments.push(new Segment(new Point(190,10), new Point(10,154)));
             segments.push(new Segment(new Point(200,20), new Point(180,90)));
-            segments.push(new Segment(new Point(100,20), new Point(200,350)));
+            segments.push(new Segment(new Point(100,20), new Point(200,200)));
             // Get canvas + draw segments
             var c=document.getElementById("myCanvas");
             var ctx=c.getContext("2d");
