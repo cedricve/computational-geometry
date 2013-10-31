@@ -10,7 +10,7 @@
         <script type="text/javascript" src="RedBlackNode.js"></script>
     </head>
     <body>
-        <canvas id="myCanvas" width="500" height="500"></canvas>
+        <canvas id="myCanvas" width="300" height="300"></canvas>
         <script type="text/javascript">
             //***************
             //
@@ -48,11 +48,17 @@
                     if(denominator!=0){
                         var x = ((_1.x*_2.y-_1.y*_2.x)*(_3.x-_4.x)-(_1.x-_2.x)*(_3.x*_4.y-_3.y*_4.x))/denominator;
                         var y = ((_1.x*_2.y-_1.y*_2.x)*(_3.y-_4.y)-(_1.y-_2.y)*(_3.x*_4.y-_3.y*_4.x))/denominator;
+                        var p = new Point(x,y);
                         // if intersection in area of segments, then we have an intersection
-                        if( ((x<=_1.x&&x>=_2.x) || (x>=_1.x&&x<=_2.x))&&((y<=_1.y&&y>=_2.y) || (y>=_1.y&&x<=_2.y)) && ((x<=_3.x&&x>=_4.x) || (x>=_3.x&&x<=_4.x))&&((y<=_3.y&&y>=_4.y) || (y>=_3.y&&x<=_4.y)) )
-                            return new Point(x,y);
+                        if(this.containsEndpoint(p) && s.containsEndpoint(p))                        
+                            return p;
                     }
                     return null;
+                };
+                Segment.prototype.containsEndpoint = function(p){
+                    _1 = this.uPoint;
+                    _2 = this.lPoint;
+                    return Math.abs((_2.x*p.y-_2.y*p.x)-(_1.x*p.y-_1.y*p.x)+(_1.x*_2.y-_1.y*_2.x))<0.1;
                 };
                 Segment.prototype.slope = function(){
                     return (this.uPoint.y-this.lPoint.y)/(this.uPoint.x-this.lPoint.x);
@@ -99,9 +105,7 @@
                     return (lower.x == p.x && lower.y == p.y);
                 };
                 SegmentStatus.prototype.containsEndpoint = function(p){
-                    _1 = this.s.uPoint;
-                    _2 = this.s.lPoint;
-                    return Math.abs((_2.x*p.y-_2.y*p.x)-(_1.x*p.y-_1.y*p.x)+(_1.x*_2.y-_1.y*_2.x))<0.1;
+                    return this.s.containsEndpoint(p);
                 };
             //***************
             //
@@ -120,9 +124,9 @@
                         for(var i = 0; i < u.length; i++)
                             inter.push(u[i]);
                         for(var i = 0; i < l.length; i++)
-                            inter.push(l[i]);
+                            inter.push(l[i].s);
                         for(var i = 0; i < c.length; i++)
-                            inter.push(c[i]);
+                            inter.push(c[i].s);
                         this.intersections.push({"intersection":p,"segments":inter});
                     }
                 };
@@ -169,7 +173,8 @@
                 };
                 SegmentIntersection.prototype.handleEventPoint = function(s){
                     this.removeFromQueue(s);
-
+                    console.log(s.p);
+                    console.log(this.status.toString());
                     // New array's for upper, lower and contains Array
                     var lArray = new Array();
                     var uArray = new Array();
@@ -182,46 +187,43 @@
 
                     // Reformat structure
                     s_ref = new SegmentStatus(s.p);
-                    // find successor and predecessor from p in status
+
                     successor = this.status.findSuccessor(s_ref);
                     while(successor != null){
-                        if(successor.hasLowerEndpoint(s.p)){
-                            lArray.push(successor.s);
-                            this.removeFromStatus(successor);
-                        }
-                        else if(successor.containsEndpoint(s.p)){
-                            cArray.push(successor.s);
-                            this.removeFromStatus(successor);
-                        }
+                        i++;
+                        if(successor.hasLowerEndpoint(s.p))
+                            lArray.push(successor);
+                        else if(successor.containsEndpoint(s.p))
+                            cArray.push(successor);
                         successor = this.status.findSuccessor(successor);
                     }
                     predecessor = this.status.findPredecessor(s_ref);
                     while(predecessor != null){
-                        if(predecessor.hasLowerEndpoint(s.p)){
-                            lArray.push(predecessor.s);
-                            this.removeFromStatus(predecessor);
-                        }
-                        else if(predecessor.containsEndpoint(s.p)){
-                            cArray.push(predecessor.s);
-                            this.removeFromStatus(predecessor);
-                        }
+                        i++;
+                        if(predecessor.hasLowerEndpoint(s.p))
+                            lArray.push(predecessor);
+                        else if(predecessor.containsEndpoint(s.p))
+                            cArray.push(predecessor);
                         predecessor = this.status.findPredecessor(predecessor);
                     }
                     
                     // Add possible intersections
                     this.addIntersection(s.p,uArray,lArray,cArray);
 
+                    // Delete all points
+                    for(var i = 0; i < lArray.length; i++)
+                        this.removeFromStatus(lArray[i]);
+                    for(var i = 0; i < cArray.length; i++)
+                        this.removeFromStatus(cArray[i]);
+                    // Add all points
                     union = new Array();
-                    // Add upper eventpoints to status
                     for(var i = 0; i < segments.length; i++){
                         this.addToStatus(segments[i]);
                         union.push(segments[i]);
                     }
-    
-                    // Add contain eventpoints to status, reordering below sweep line.
                     for(var i = 0; i < cArray.length; i++){
-                        newPoint = new Point(cArray[i].calcX(s.p.y+1),s.p.y+1); // y, just after sweep line (+1)
-                        seg = new Segment(newPoint,cArray[i].lPoint);
+                        newPoint = new Point(cArray[i].s.calcX(s.p.y+1),s.p.y+1); // y, just after sweep line (+1)
+                        seg = new Segment(newPoint,cArray[i].s.lPoint);
                         union.push(seg);
                         this.addToStatus(seg);
                     }
@@ -252,21 +254,22 @@
                             this.findNewEvent(successor.s,biggest,s.p);
                     }
                 }; 
-                SegmentIntersection.prototype.findNewEvent = function(s1,s2,p){          
+                SegmentIntersection.prototype.findNewEvent = function(s1,s2,p){       
                     point = s1.intersect(s2);
                     seg = new SegmentWrapper(point,"queue");
-                    if(point && (point.y > p.y || point.x > p.x) && !this.queue.find(seg)) // below sweep line
+                    if(point && (point.y >= p.y || (point.y >= p.y && point.x >= p.x)) && !this.queue.find(seg)) // below sweep line
                         this.queue.add(seg);
                 };
         </script>
         <script type="text/javascript">
             segments = new Array();
-            segments.push(new Segment(new Point(60,40), new Point(260,230)));
-            segments.push(new Segment(new Point(10,20), new Point(190,200)));
-            segments.push(new Segment(new Point(240,10), new Point(10,200)));
+            segments.push(new Segment(new Point(60,60),new Point(280,70)));
+            segments.push(new Segment(new Point(60,80),new Point(280,100)));
+            segments.push(new Segment(new Point(60,100),new Point(280,140)));
+            segments.push(new Segment(new Point(40,120),new Point(280,180)));
             segments.push(new Segment(new Point(190,10), new Point(10,154)));
-            segments.push(new Segment(new Point(200,20), new Point(180,90)));
-            segments.push(new Segment(new Point(100,20), new Point(200,200)));
+            segments.push(new Segment(new Point(190,50), new Point(10,184)));
+
             // Get canvas + draw segments
             var c=document.getElementById("myCanvas");
             var ctx=c.getContext("2d");
@@ -280,7 +283,7 @@
 
             // Calculate intersections
             si = new SegmentIntersection();
-            var intersections = si.calculate(segments);
+            var intersections =  si.calculate(segments);
 
             // Draw intersections
             for(var i = 0; i < intersections.length; i++){
@@ -289,6 +292,7 @@
             }
             ctx.fillStyle = 'red';
             ctx.fill();
+
         </script>
     </body>
 </html>
